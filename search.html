@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AllSearch - 통합 검색 포털</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: 2rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+    }
+    .dark {
+      --bg: #1a1a1a;
+      --fg: #e0e0e0;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    input, select, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 0.25rem 0;
+      cursor: pointer;
+    }
+    .dark-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+    .engine-list {
+      font-size: 0.875rem;
+      margin-top: 2rem;
+    }
+    .engine-list strong {
+      display: inline-block;
+      width: 120px;
+    }
+    @media (max-width: 600px) {
+      input, select, button {
+        width: 100%;
+        margin: 0.25rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="dark-toggle" onclick="toggleDarkMode()">🌙/☀️</button>
+  <h1>AllSearch 통합 검색</h1>
+  <input type="text" id="query" placeholder="검색어를 입력하세요" onkeypress="handleKey(event)">
+  <select id="engine">
+    <option value="https://www.google.com/search?q=">Google</option>
+    <option value="https://search.naver.com/search.naver?query=">Naver</option>
+    <option value="https://www.bing.com/search?q=">Bing</option>
+    <option value="https://search.zum.com/search.zum?query=">Zum</option>
+    <option value="https://search.nate.com/search/all.html?q=">Nate</option>
+    <option value="https://search.daum.net/search?q=">Daum</option>
+    <option value="https://search.dreamwiz.com/?query=">드림위즈</option>
+    <option value="https://namu.wiki/Search?q=">나무위키</option>
+    <option value="https://search.korea.com/search.html?q=">코리아닷컴</option>
+    <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+    <option value="https://search.brave.com/search?q=">Brave Search</option>
+  </select>
+  <button onclick="search()">검색</button>
+
+  <h3>🔎 최근 검색어</h3>
+  <ul id="recent"></ul>
+
+  <div class="engine-list">
+    <h3>💡 검색엔진 설명</h3>
+    <p><strong>Google</strong>: 전세계에서 가장 많이 사용되는 검색 엔진.</p>
+    <p><strong>Naver</strong>: 한국 1위 검색 엔진. 생활 밀착형에 특화됨.</p>
+    <p><strong>Bing</strong>: Microsoft에서 운영. Edge의 기본 검색.</p>
+    <p><strong>Zum</strong>: 일부 검색은 구글 맞춤 검색 사용.</p>
+    <p><strong>Nate</strong>: 다음으로부터 검색 결과 제공.</p>
+    <p><strong>Daum</strong>: 자체 검색 + Bing 검색 결과.</p>
+    <p><strong>드림위즈</strong>: 예전 포털, 아직 일부 기능 운영.</p>
+    <p><strong>나무위키</strong>: 자체 검색, 브라우저에서 기본 설정 가능.</p>
+    <p><strong>코리아닷컴</strong>: 국내 통합 포털.</p>
+    <p><strong>DuckDuckGo</strong>: 개인정보 보호에 중점을 둔 검색 엔진.</p>
+    <p><strong>Brave Search</strong>: 브라우저 Brave 기반, 광고 없음.</p>
+  </div>
+
+  <script>
+    const queryInput = document.getElementById('query');
+    const engineSelect = document.getElementById('engine');
+    const recentList = document.getElementById('recent');
+
+    function search() {
+      const query = queryInput.value.trim();
+      const engine = engineSelect.value;
+      if (query) {
+        saveRecent(query);
+        window.open(engine + encodeURIComponent(query), '_blank');
+        queryInput.value = '';
+      }
+      renderRecent();
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter') search();
+    }
+
+    function saveRecent(query) {
+      let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+      recent = recent.filter(q => q !== query);
+      recent.unshift(query);
+      if (recent.length > 10) recent = recent.slice(0, 10);
+      localStorage.setItem('recentSearches', JSON.stringify(recent));
+    }
+
+    function renderRecent() {
+      let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+      recentList.innerHTML = '';
+      recent.forEach(query => {
+        const li = document.createElement('li');
+        li.textContent = query;
+        li.onclick = () => {
+          queryInput.value = query;
+          search();
+        };
+        recentList.appendChild(li);
+      });
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    renderRecent();
+  </script>
+</body>
+</html>

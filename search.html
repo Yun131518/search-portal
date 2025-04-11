@@ -2,33 +2,44 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <title>검색엔진 모음</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AllSearch - 통합 검색 포털</title>
   <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+    }
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: var(--bg);
       color: var(--fg);
       margin: 0;
       padding: 2rem;
+      text-align: center;
       transition: background-color 0.3s, color 0.3s;
-    }
-    :root {
-      --bg: #ffffff;
-      --fg: #000000;
     }
     .dark {
       --bg: #1a1a1a;
       --fg: #e0e0e0;
     }
-    h1 {
-      font-size: 2rem;
+    #clock {
+      font-size: 1.2rem;
+      font-weight: bold;
       margin-bottom: 1rem;
     }
-    input, select, button {
-      padding: 0.5rem;
-      font-size: 1rem;
-      margin-right: 0.5rem;
+    h1 {
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 60%;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    select, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-left: 5px;
     }
     ul {
       list-style: none;
@@ -46,13 +57,28 @@
     .engine-list {
       font-size: 0.875rem;
       margin-top: 2rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .engine-list strong {
       display: inline-block;
       width: 120px;
     }
+    .recent-searches {
+      margin-top: 20px;
+    }
+    .recent-searches span {
+      display: inline-block;
+      background: #e0e0e0;
+      margin: 5px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
     @media (max-width: 600px) {
-      input, select, button {
+      input[type="text"], select, button {
         width: 100%;
         margin: 0.25rem 0;
       }
@@ -61,25 +87,25 @@
 </head>
 <body>
   <button class="dark-toggle" onclick="toggleDarkMode()">🌙/☀️</button>
+  <div id="clock"></div>
   <h1>AllSearch 통합 검색</h1>
-  <input type="text" id="query" placeholder="검색어를 입력하세요" onkeypress="handleKey(event)">
+  <input type="text" id="query" placeholder="검색어 입력" onkeypress="handleKey(event)">
   <select id="engine">
-    <option value="https://www.google.com/search?q=">Google</option>
-    <option value="https://search.naver.com/search.naver?query=">Naver</option>
+    <option value="https://www.google.com/search?q=">구글</option>
+    <option value="https://search.naver.com/search.naver?query=">네이버</option>
     <option value="https://www.bing.com/search?q=">Bing</option>
     <option value="https://search.zum.com/search.zum?query=">Zum</option>
-    <option value="https://search.nate.com/search/all.html?q=">Nate</option>
-    <option value="https://search.daum.net/search?q=">Daum</option>
-    <option value="https://search.dreamwiz.com/?query=">드림위즈</option>
+    <option value="https://search.nate.com/search/all.html?q=">네이트</option>
+    <option value="https://search.daum.net/search?q=">다음</option>
+    <option value="https://search.dreamwiz.com/search?query=">드림위즈</option>
     <option value="https://namu.wiki/Search?q=">나무위키</option>
-    <option value="https://search.korea.com/search.html?q=">코리아닷컴</option>
+    <option value="https://www.korea.com/search/?q=">코리아닷컴</option>
     <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
     <option value="https://search.brave.com/search?q=">Brave Search</option>
   </select>
   <button onclick="search()">검색</button>
 
-  <h3>🔎 최근 검색어</h3>
-  <ul id="recent"></ul>
+  <div class="recent-searches" id="recent"></div>
 
   <div class="engine-list">
     <h3>💡 검색엔진 설명</h3>
@@ -97,19 +123,31 @@
   </div>
 
   <script>
+    function updateClock() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const h = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${y}-${m}-${d} ${h}:${min}:${s}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
     const queryInput = document.getElementById('query');
     const engineSelect = document.getElementById('engine');
-    const recentList = document.getElementById('recent');
+    const recentContainer = document.getElementById('recent');
 
     function search() {
       const query = queryInput.value.trim();
       const engine = engineSelect.value;
-      if (query) {
-        saveRecent(query);
-        window.open(engine + encodeURIComponent(query), '_blank');
-        queryInput.value = '';
-      }
-      renderRecent();
+      if (!query) return;
+
+      saveRecent(query);
+      window.open(engine + encodeURIComponent(query), '_blank');
+      queryInput.value = '';
     }
 
     function handleKey(e) {
@@ -118,24 +156,16 @@
 
     function saveRecent(query) {
       let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-      recent = recent.filter(q => q !== query);
+      recent = recent.filter(item => item !== query);
       recent.unshift(query);
       if (recent.length > 10) recent = recent.slice(0, 10);
       localStorage.setItem('recentSearches', JSON.stringify(recent));
+      renderRecent();
     }
 
     function renderRecent() {
-      let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-      recentList.innerHTML = '';
-      recent.forEach(query => {
-        const li = document.createElement('li');
-        li.textContent = query;
-        li.onclick = () => {
-          queryInput.value = query;
-          search();
-        };
-        recentList.appendChild(li);
-      });
+      const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+      recentContainer.innerHTML = recent.map(q => `<span onclick="document.getElementById('query').value='${q}';search();">${q}</span>`).join('');
     }
 
     function toggleDarkMode() {
